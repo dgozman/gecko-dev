@@ -108,13 +108,9 @@ EnterprisePoliciesManager.prototype = {
       Services.prefs.clearUserPref(PREF_POLICIES_APPLIED);
     }
 
-    // Playwright: Disable enterprise policies
-    if (true) {
-      this.status = Ci.nsIEnterprisePolicies.INACTIVE;
-      return;
-    }
-
-    let provider = this._chooseProvider();
+    // --- Playwright begin ---
+    let provider = new PlaywrightPoliciesProvider();
+    // --- Playwright end ---
 
     if (provider.failed) {
       this.status = Ci.nsIEnterprisePolicies.FAILED;
@@ -634,6 +630,19 @@ class JSONPoliciesProvider {
         this._failed = true;
       }
     }
+  }
+}
+
+class PlaywrightPoliciesProvider extends JSONPoliciesProvider {
+  _getConfigurationFile() {
+    let prefPath = Services.prefs.getStringPref(PREF_ALTERNATE_PATH, "");
+    if (!prefPath)
+      return null;
+
+    dump(`Playwright: loading enterprise policies from ${prefPath}\n`);
+    let configFile = Cc["@mozilla.org/file/local;1"].createInstance(Ci.nsIFile);
+    configFile.initWithPath(prefPath);
+    return configFile;
   }
 }
 
